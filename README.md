@@ -4,7 +4,9 @@
 
 ## Used fuzzy merge to update the location names in the ClerkshipGrades file (see below to see how the locations in the ClerkshipGrades file should be mapped to those in the Locations file).
 Location (Locations file)	            Location_new (ClerkshipGrades file)
+
 Baystate Medical Center	              locations containing "Baystate"
+
 Berkshire Medical Center	            locations containing "Berkshire"
 Boston Area Hospitals	                locations containing "Boston"
 Pioneer Valley Hospitals	            locations containing "Pioneer"
