@@ -1,0 +1,154 @@
+---
+title: 'M Carlin: Third Deliverable'
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+setwd("C:/Users/CarlinML/DACSS-690R/Third_Deliverable")
+getwd()
+```
+
+## CLERKSHIP GRADES DATASET - MERGING
+
+# Cleaned/formatted clerkship grade data
+
+```{r}
+ClerkshipGrades <- readRDS(gzcon(url("https://github.com/DACSS-690R/Second_Deliverable/raw/main/DataCleanAndFormatted/ClerkshipGrades_formatted.RDS")))
+names(ClerkshipGrades)[names(ClerkshipGrades) == 'Location'] <- 'Location_Code'
+ClerkshipGrades$Location_new = ClerkshipGrades$Location_Description
+View(ClerkshipGrades)
+str(ClerkshipGrades) # 6427 rows
+```
+
+# Gender and ethnicity info
+
+```{r}
+library(readxl)
+folder="Data"
+fileName="Gender_Ethnicity_info.xlsx"
+fileToRead=file.path(folder,fileName)
+fileToRead
+Gender_Ethnicity=read_xlsx(fileToRead)
+View(Gender_Ethnicity)
+str(Gender_Ethnicity) # 1004 rows
+```
+
+# merge ClerkshipGrades with Gender_Ethnicity using left join
+
+```{r}
+ClerkshipGrades2 <- merge(ClerkshipGrades,Gender_Ethnicity,all.x=TRUE, by.x="ID", by.y="ID")
+View(ClerkshipGrades2)
+str(ClerkshipGrades2) # 6427 rows 
+```
+
+# Location info
+
+```{r}
+folder="Data"
+fileName="Location_info.xlsx"
+fileToRead=file.path(folder,fileName)
+fileToRead
+Locations=read_xlsx(fileToRead)
+View(Locations)
+str(Locations) # 22 rows
+```
+
+# merge ClerkshipGrades_with_GenderEthnicity with Locations using fuzzy merge
+
+# basic left merge
+
+```{r}
+str(merge(ClerkshipGrades2,Locations, by.x='Location_new', by.y='Location'))
+# 1877 matched rows
+```
+
+# locations only in ClerkshipGrades_GenderEthnicity file
+
+```{r}
+onlyInGrades=sort(setdiff(ClerkshipGrades2$Location_new,Locations$Location))
+onlyInGrades
+```
+
+# locations only in Locations file
+
+```{r}
+onlyInLocations=sort(setdiff(Locations$Location, ClerkshipGrades2$Location_new))
+onlyInLocations
+```
+
+```{r}
+library(stringdist)
+stringdist::stringdist(onlyInGrades[1],onlyInLocations,method = 'jaccard')
+```
+
+
+```{r}
+TheMatch<-character()
+mindist<-integer()
+sortedmatches<-character()
+
+for (i in 1:length(onlyInGrades) ) {
+  allDistances<-stringdist::stringdist(onlyInGrades[i],onlyInLocations,method = 'jw')
+  mindist[i]=min(allDistances)
+  TheMatch[i]<-onlyInLocations[which.min(allDistances)]
+}
+fuzzyOutput=data.frame(input=onlyInGrades,possible_match=TheMatch,divergence=mindist,  stringsAsFactors = F)
+
+fuzzyOutput[order(-fuzzyOutput$divergence),]
+```
+
+```{r}
+best_fuzzy_1=fuzzyOutput[fuzzyOutput$divergence<=0.34,]
+best_fuzzy_1
+```
+
+```{r}
+ClerkshipGrades2$Location_new[match(best_fuzzy_1$input, ClerkshipGrades2$Location_new)] = best_fuzzy_1$possible_match
+
+onlyInGrades=sort(setdiff(ClerkshipGrades2$Location_new,Locations$Location))
+onlyInGrades
+onlyInLocations=sort(setdiff(Locations$Location,ClerkshipGrades2$Location_new))
+onlyInLocations
+
+TheMatch<-character()
+mindist<-integer()
+sortedmatches<-character()
+
+for (i in 1:length(onlyInGrades) ) {
+  allDistances<-stringdist::stringdist(onlyInGrades[i],onlyInLocations,method = 'jw')
+  mindist[i]=min(allDistances)
+  TheMatch[i]<-onlyInLocations[which.min(allDistances)]
+}
+fuzzyOutput=data.frame(input=onlyInGrades,possible_match=TheMatch,divergence=mindist,  stringsAsFactors = F)
+
+fuzzyOutput[order(-fuzzyOutput$divergence),]
+```
+
+
+```{r}
+warnings()
+summary(allDistances)
+```
+
+
+```{r}
+best_fuzzy_2=fuzzyOutput[fuzzyOutput$divergence<=0.3705,]
+best_fuzzy_2
+```
+
+```{r}
+ClerkshipGrades2$Location_new[match(best_fuzzy_2$output, ClerkshipGrades2$Location_new)] = best_fuzzy_2$possible_match
+
+```
+
+
+
+
+```{r}
+str(merge(ClerkshipGrades2,Locations, by.x='Location_new', by.y='Location'))
+```
+
