@@ -12,5 +12,7 @@ Southeast Area Hospitals	            locations containing "Southeast"
 UMMHC Hospitals	                      locations containing "UMMHC"
 St. Vincent Hospital Massachusetts	  locations containing "Vincent"
 Worcester Area Hospitals	            locations containing "Worcester"
+All other locations                   remain as is
 
-All other locations remain as is
+## the first step in the fuzzy merge process seems to be working, and I matched on the fuzzy_1 results, but then when I try to run another round of fuzzy merging, I am running into a problem where the code to show locations only in the ClerkshipGrades file is showing me locations that should have been updated with the fuzzy_1 matching (e.g., from "Worcester Recovery Center and Hospital - Adolescent Unit" to "Worcester Area Hospitals")
+ 
