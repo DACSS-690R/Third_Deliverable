@@ -130,12 +130,6 @@ fuzzyOutput[order(-fuzzyOutput$divergence),]
 
 
 ```{r}
-warnings()
-summary(allDistances)
-```
-
-
-```{r}
 best_fuzzy_2=fuzzyOutput[fuzzyOutput$divergence<=0.3705,]
 best_fuzzy_2
 ```
@@ -144,8 +138,6 @@ best_fuzzy_2
 ClerkshipGrades2$Location_new[match(best_fuzzy_2$output, ClerkshipGrades2$Location_new)] = best_fuzzy_2$possible_match
 
 ```
-
-
 
 
 ```{r}
