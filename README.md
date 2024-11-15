@@ -1,4 +1,4 @@
-# Third_Deliverable
+# Michele Carlin's Third Deliverable
 
 ## I merged gender & ethnicity variables into my ClerkshipGrades file matching on ID. ClerkshipGrades file is in long format so students have more than one row of data therefore I used a left join to merge the gender & ethnicity info from one line to many lines in the ClerkshipGrades file.
 
