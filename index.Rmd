@@ -37,7 +37,7 @@ Gender_Ethnicity=read_xlsx(fileToRead)
 str(Gender_Ethnicity) # 1004 rows
 ```
 
-# merge ClerkshipGrades with Gender_Ethnicity using left join
+# Merge ClerkshipGrades with Gender_Ethnicity using left join
 
 ```{r}
 ClerkshipGrades2 <- merge(ClerkshipGrades,Gender_Ethnicity,all.x=TRUE, by.x="ID", by.y="ID")
@@ -55,23 +55,23 @@ Locations=read_xlsx(fileToRead)
 str(Locations) # 22 rows
 ```
 
-# merge ClerkshipGrades_with_GenderEthnicity with Locations using fuzzy merge
+# Merge ClerkshipGrades_with_GenderEthnicity with Locations using fuzzy merge
 
-# basic left merge
+# Basic left join merge
 
 ```{r}
 str(merge(ClerkshipGrades2,Locations, by.x='Location_new', by.y='Location'))
 # 1877 matched rows
 ```
 
-# locations only in ClerkshipGrades_GenderEthnicity file
+# Locations only in ClerkshipGrades_GenderEthnicity file
 
 ```{r}
 onlyInGrades=sort(setdiff(ClerkshipGrades2$Location_new,Locations$Location))
 onlyInGrades
 ```
 
-# locations only in Locations file
+# Locations only in Locations file
 
 ```{r}
 onlyInLocations=sort(setdiff(Locations$Location, ClerkshipGrades2$Location_new))
@@ -83,6 +83,7 @@ library(stringdist)
 stringdist::stringdist(onlyInGrades[1],onlyInLocations,method = 'jaccard')
 ```
 
+# Fuzzy merge
 
 ```{r}
 TheMatch<-character()
@@ -99,7 +100,7 @@ fuzzyOutput=data.frame(input=onlyInGrades,possible_match=TheMatch,divergence=min
 fuzzyOutput[order(-fuzzyOutput$divergence),]
 ```
 
-# keep all matches from above even though they aren't all completely correct; they will be corrected in subsequent steps
+# Keep all matches from above even though they aren't all completely correct; they will be corrected in subsequent steps
 
 ```{r}
 fuzzyMatch_notperfect=fuzzyOutput[order(-fuzzyOutput$divergence),]
@@ -132,6 +133,8 @@ fuzzyMatch_Perfect=rbind(fuzzyMatch_Perfect_part1,fuzzyMatch_Perfect_part2)
 names(fuzzyMatch_Perfect)=c('Location_new','location_main')
 ```
 
+# Merge final fuzzymatch with ClerkshipGrades file
+
 ```{r}
 ClerkshipGrades_withLoc=merge(ClerkshipGrades2,fuzzyMatch_Perfect, by='Location_new',all.x = T)
 str(ClerkshipGrades_withLoc)
@@ -141,12 +144,14 @@ str(ClerkshipGrades_withLoc)
 # Pivot wide to long
 
 ```{r}
+library(tidyr)
+library(dplyr)
 ClerkshipGrades_wide <- ClerkshipGrades_withLoc %>% select(-c(Location_new, X, Title, Session, Location_Code:Final_Letter, SPE_Letter, NBME_Letter, OSCE_Letter, gender, ethnicity))
 names(ClerkshipGrades_wide) = gsub(pattern = "_Letter2", replacement = "_Letter", x = names(ClerkshipGrades_wide))
 ClerkshipGrades_wide <- ClerkshipGrades_wide %>% relocate(location_main, .before = Final_Numeric)
 ClerkshipGrades_wide
 
-library(tidyr)
+library(dplyr)
 ClerkshipGrades_long <- ClerkshipGrades_wide %>% 
   gather(v, value, Final_Numeric:OSCE_Letter) %>% 
   separate(v, c("var", "col")) %>% 
@@ -154,8 +159,10 @@ ClerkshipGrades_long <- ClerkshipGrades_wide %>%
   spread(col, value)
 ClerkshipGrades_long
 str(ClerkshipGrades_long) # 25708 rows
-
-# remove rows containing one or more NAs
-ClerkshipGrades_long <- na.omit(ClerkshipGrades_long) # 20181 rows
 ```
 
+# Remove rows containing one or more NAs
+
+```{r}
+ClerkshipGrades_long <- na.omit(ClerkshipGrades_long) # 20181 rows
+```
