@@ -18,9 +18,10 @@ getwd()
 
 ```{r}
 ClerkshipGrades <- readRDS(gzcon(url("https://github.com/DACSS-690R/Second_Deliverable/raw/main/DataCleanAndFormatted/ClerkshipGrades_formatted.RDS")))
+names(ClerkshipGrades)[names(ClerkshipGrades) == 'Session...6'] <- 'Session'
+names(ClerkshipGrades)[names(ClerkshipGrades) == 'Session...7'] <- 'Session_Code'
 names(ClerkshipGrades)[names(ClerkshipGrades) == 'Location'] <- 'Location_Code'
 ClerkshipGrades$Location_new = ClerkshipGrades$Location_Description
-View(ClerkshipGrades)
 str(ClerkshipGrades) # 6427 rows
 ```
 
@@ -33,7 +34,6 @@ fileName="Gender_Ethnicity_info.xlsx"
 fileToRead=file.path(folder,fileName)
 fileToRead
 Gender_Ethnicity=read_xlsx(fileToRead)
-View(Gender_Ethnicity)
 str(Gender_Ethnicity) # 1004 rows
 ```
 
@@ -41,7 +41,6 @@ str(Gender_Ethnicity) # 1004 rows
 
 ```{r}
 ClerkshipGrades2 <- merge(ClerkshipGrades,Gender_Ethnicity,all.x=TRUE, by.x="ID", by.y="ID")
-View(ClerkshipGrades2)
 str(ClerkshipGrades2) # 6427 rows 
 ```
 
@@ -53,7 +52,6 @@ fileName="Location_info.xlsx"
 fileToRead=file.path(folder,fileName)
 fileToRead
 Locations=read_xlsx(fileToRead)
-View(Locations)
 str(Locations) # 22 rows
 ```
 
@@ -101,46 +99,63 @@ fuzzyOutput=data.frame(input=onlyInGrades,possible_match=TheMatch,divergence=min
 fuzzyOutput[order(-fuzzyOutput$divergence),]
 ```
 
+# keep all matches from above even though they aren't all completely correct; they will be corrected in subsequent steps
+
 ```{r}
-best_fuzzy_1=fuzzyOutput[fuzzyOutput$divergence<=0.34,]
-best_fuzzy_1
+fuzzyMatch_notperfect=fuzzyOutput[order(-fuzzyOutput$divergence),]
+row.names(fuzzyMatch_notperfect)=NULL
+fuzzyMatch_notperfect
 ```
 
+# Manually change the 3 incorrect matches
+
 ```{r}
-ClerkshipGrades2$Location_new[match(best_fuzzy_1$input, ClerkshipGrades2$Location_new)] = best_fuzzy_1$possible_match
+fuzzyMatch_notperfect[c(1,2,11),'input']
+changes=c('Baystate Medical Center',"UMMHC Hospitals","Berkshire Medical Center")
+fuzzyMatch_notperfect[c(1,2,11),'possible_match']=changes
 
-onlyInGrades=sort(setdiff(ClerkshipGrades2$Location_new,Locations$Location))
-onlyInGrades
-onlyInLocations=sort(setdiff(Locations$Location,ClerkshipGrades2$Location_new))
-onlyInLocations
-
-TheMatch<-character()
-mindist<-integer()
-sortedmatches<-character()
-
-for (i in 1:length(onlyInGrades) ) {
-  allDistances<-stringdist::stringdist(onlyInGrades[i],onlyInLocations,method = 'jw')
-  mindist[i]=min(allDistances)
-  TheMatch[i]<-onlyInLocations[which.min(allDistances)]
-}
-fuzzyOutput=data.frame(input=onlyInGrades,possible_match=TheMatch,divergence=mindist,  stringsAsFactors = F)
-
-fuzzyOutput[order(-fuzzyOutput$divergence),]
+fuzzyMatch_notperfect
+fuzzyMatch_Perfect_part1=fuzzyMatch_notperfect[,-3] # without 3rd column
 ```
 
 
 ```{r}
-best_fuzzy_2=fuzzyOutput[fuzzyOutput$divergence<=0.3705,]
-best_fuzzy_2
+##fuzzyMatch_Perfect_part2?
+forPart2=intersect(Locations$Location, ClerkshipGrades2$Location_new)
+fuzzyMatch_Perfect_part2=data.frame(cbind(input=forPart2,possible_match=forPart2))
+fuzzyMatch_Perfect_part2
 ```
 
 ```{r}
-ClerkshipGrades2$Location_new[match(best_fuzzy_2$output, ClerkshipGrades2$Location_new)] = best_fuzzy_2$possible_match
+# concat
+fuzzyMatch_Perfect=rbind(fuzzyMatch_Perfect_part1,fuzzyMatch_Perfect_part2)
+names(fuzzyMatch_Perfect)=c('Location_new','location_main')
+```
 
+```{r}
+ClerkshipGrades_withLoc=merge(ClerkshipGrades2,fuzzyMatch_Perfect, by='Location_new',all.x = T)
+str(ClerkshipGrades_withLoc)
 ```
 
 
+# Pivot wide to long
+
 ```{r}
-str(merge(ClerkshipGrades2,Locations, by.x='Location_new', by.y='Location'))
+ClerkshipGrades_wide <- ClerkshipGrades_withLoc %>% select(-c(Location_new, X, Title, Session, Location_Code:Final_Letter, SPE_Letter, NBME_Letter, OSCE_Letter, gender, ethnicity))
+names(ClerkshipGrades_wide) = gsub(pattern = "_Letter2", replacement = "_Letter", x = names(ClerkshipGrades_wide))
+ClerkshipGrades_wide <- ClerkshipGrades_wide %>% relocate(location_main, .before = Final_Numeric)
+ClerkshipGrades_wide
+
+library(tidyr)
+ClerkshipGrades_long <- ClerkshipGrades_wide %>% 
+  gather(v, value, Final_Numeric:OSCE_Letter) %>% 
+  separate(v, c("var", "col")) %>% 
+  arrange(ID) %>% 
+  spread(col, value)
+ClerkshipGrades_long
+str(ClerkshipGrades_long) # 25708 rows
+
+# remove rows containing one or more NAs
+ClerkshipGrades_long <- na.omit(ClerkshipGrades_long) # 20181 rows
 ```
 
