@@ -166,3 +166,20 @@ str(ClerkshipGrades_long) # 25708 rows
 ```{r}
 ClerkshipGrades_long <- na.omit(ClerkshipGrades_long) # 20181 rows
 ```
+
+```{r}
+folder = "DataConcatenatedMerged"
+
+# Check if the folder exists
+if (!dir.exists(folder)) {
+  # Create the folder
+  dir.create(folder)
+  saveRDS(ClerkshipGrades_withLoc,file.path(folder,"ClerkshipGrades_withLoc.RDS"))
+
+} else {
+  saveRDS(ClerkshipGrades_withLoc,file.path(folder,"ClerkshipGrades_withLoc.RDS"))
+
+}
+```
+```
+
