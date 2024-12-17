@@ -20,8 +20,6 @@ getwd()
 ClerkshipGrades <- readRDS(gzcon(url("https://github.com/DACSS-690R/Second_Deliverable/raw/main/DataCleanAndFormatted/ClerkshipGrades_formatted.RDS")))
 names(ClerkshipGrades)[names(ClerkshipGrades) == 'Session...6'] <- 'Session'
 names(ClerkshipGrades)[names(ClerkshipGrades) == 'Session...7'] <- 'Session_Code'
-names(ClerkshipGrades)[names(ClerkshipGrades) == 'Location'] <- 'Location_Code'
-ClerkshipGrades$Location_new = ClerkshipGrades$Location_Description
 str(ClerkshipGrades) # 6427 rows
 ```
 
@@ -60,7 +58,7 @@ str(Locations) # 22 rows
 # Basic left join merge
 
 ```{r}
-str(merge(ClerkshipGrades2,Locations, by.x='Location_new', by.y='Location'))
+ClerkshipGrades2 <- str(merge(ClerkshipGrades2,Locations, by.x='Location', by.y='Location'))
 # 1877 matched rows
 ```
 
